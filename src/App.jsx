@@ -306,15 +306,19 @@ function App() {
     const file = e.target.files[0]
     if (!file) return
 
-    if (file.name.endsWith('.docx')) {
-      const arrayBuffer = await file.arrayBuffer()
-      const result = await mammoth.convertToHtml({ arrayBuffer })
-      const turndown = new TurndownService({ headingStyle: 'atx', bulletListMarker: '-' })
-      setMarkdown(turndown.turndown(result.value))
-    } else {
-      const reader = new FileReader()
-      reader.onload = (event) => setMarkdown(event.target.result)
-      reader.readAsText(file)
+    try {
+      if (file.name.endsWith('.docx')) {
+        const arrayBuffer = await file.arrayBuffer()
+        const result = await mammoth.convertToHtml({ arrayBuffer })
+        const turndown = new TurndownService({ headingStyle: 'atx', bulletListMarker: '-' })
+        setMarkdown(turndown.turndown(result.value))
+      } else {
+        const reader = new FileReader()
+        reader.onload = (event) => setMarkdown(event.target.result)
+        reader.readAsText(file)
+      }
+    } catch (err) {
+      console.error('Error uploading file:', err)
     }
     e.target.value = ''
   }, [])
