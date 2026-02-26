@@ -3,8 +3,11 @@ import ReactMarkdown from 'react-markdown'
 import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
 import remarkGfm from 'remark-gfm'
-import { useReactToPrint } from 'react-to-print'
 import { Upload, Trash2, FileDown } from 'lucide-react'
+import jsPDF from 'jspdf'
+import html2canvas from 'html2canvas'
+import mammoth from 'mammoth'
+import TurndownService from 'turndown'
 import 'katex/dist/katex.min.css'
 
 const defaultContent = `# Prueba de Renderizado
@@ -29,6 +32,7 @@ function App() {
   const [markdown, setMarkdown] = useState(() => {
     return localStorage.getItem(STORAGE_KEY) || defaultContent
   })
+  const [pdfLoading, setPdfLoading] = useState(false)
 
   const previewRef = useRef(null)
   const fileInputRef = useRef(null)
@@ -37,24 +41,61 @@ function App() {
     localStorage.setItem(STORAGE_KEY, markdown)
   }, [markdown])
 
-  const handlePrint = useReactToPrint({
-    contentRef: previewRef,
-    documentTitle: 'Markdown-Preview',
-    pageStyle: `
-      @page { size: auto; margin: 15mm; }
-      @media print {
-        body { -webkit-print-color-adjust: exact; }
-        .prose { max-width: none !important; }
-      }
-    `,
-  })
+  const handleDownloadPdf = async () => {
+    const element = previewRef.current
+    if (!element) return
+    setPdfLoading(true)
+    try {
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+      })
 
-  const handleUpload = (e) => {
+      const imgData = canvas.toDataURL('image/png')
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+
+      const pdfWidth = pdf.internal.pageSize.getWidth()
+      const pdfHeight = pdf.internal.pageSize.getHeight()
+      const imgWidth = pdfWidth
+      const imgHeight = (canvas.height * pdfWidth) / canvas.width
+
+      let heightLeft = imgHeight
+      let position = 0
+
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
+      heightLeft -= pdfHeight
+
+      while (heightLeft > 0) {
+        position -= pdfHeight
+        pdf.addPage()
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
+        heightLeft -= pdfHeight
+      }
+
+      pdf.save('documento.pdf')
+    } finally {
+      setPdfLoading(false)
+    }
+  }
+
+  const handleUpload = async (e) => {
     const file = e.target.files[0]
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = (event) => setMarkdown(event.target.result)
-    reader.readAsText(file)
+
+    if (file.name.endsWith('.docx')) {
+      const arrayBuffer = await file.arrayBuffer()
+      const result = await mammoth.convertToHtml({ arrayBuffer })
+      const turndown = new TurndownService({ headingStyle: 'atx', bulletListMarker: '-' })
+      const md = turndown.turndown(result.value)
+      setMarkdown(md)
+    } else {
+      const reader = new FileReader()
+      reader.onload = (event) => setMarkdown(event.target.result)
+      reader.readAsText(file)
+    }
+
     e.target.value = ''
   }
 
@@ -76,7 +117,7 @@ function App() {
         {/* Hidden file input */}
         <input
           type="file"
-          accept=".md,.markdown,.txt"
+          accept=".md,.markdown,.txt,.docx"
           ref={fileInputRef}
           onChange={handleUpload}
           className="hidden"
@@ -85,10 +126,10 @@ function App() {
         <button
           onClick={() => fileInputRef.current?.click()}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white rounded-md text-sm font-medium transition-colors shadow-sm"
-          title="Subir un archivo .md desde tu ordenador"
+          title="Subir un archivo .md, .txt o .docx desde tu ordenador"
         >
           <Upload size={15} />
-          Subir Markdown
+          Subir archivo
         </button>
 
         <button
@@ -101,12 +142,13 @@ function App() {
         </button>
 
         <button
-          onClick={handlePrint}
-          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white rounded-md text-sm font-medium transition-colors shadow-sm"
+          onClick={handleDownloadPdf}
+          disabled={pdfLoading}
+          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-md text-sm font-medium transition-colors shadow-sm"
           title="Exportar la vista previa como PDF"
         >
           <FileDown size={15} />
-          Descargar PDF
+          {pdfLoading ? 'Generando...' : 'Descargar PDF'}
         </button>
       </header>
 
