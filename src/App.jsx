@@ -3,49 +3,44 @@ import ReactMarkdown from 'react-markdown'
 import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
 import remarkGfm from 'remark-gfm'
-import { Upload, Trash2, FileDown, Maximize2, Minimize2 } from 'lucide-react'
+import { Upload, Trash2, Download } from 'lucide-react'
 import html2pdf from 'html2pdf.js'
 import mammoth from 'mammoth'
 import TurndownService from 'turndown'
 import 'katex/dist/katex.min.css'
-import 'github-markdown-css/github-markdown-light.css'
 
-const defaultContent = `# Prueba de Renderizado
+const defaultContent = `# Project Proposal: Aurora
 
-Ecuaci\u00f3n en l\u00ednea: $E = mc^2$
+This document outlines the development of the new 'Aurora' minimalist markdown editor variant.
 
-Ecuaci\u00f3n en bloque:
-$$
-f(x) = \\int_{-\\infty}^\\infty \\hat f(\\xi)\\,e^{2 \\pi i \\xi x} \\,d\\xi
-$$
+## Key Features
 
-## Tabla de prueba
+- Ultra-minimalist design
+- Real-time preview
+- Floating action buttons
 
-| Concepto | F\u00f3rmula | Unidad |
-| :--- | :---: | ---: |
-| Fuerza | $F = ma$ | Newton |
-| Energ\u00eda | $E = mc^2$ | Joule |
-| Velocidad | $v = d/t$ | m/s |
+### Mathematical Model
 
-## Bloque de c\u00f3digo
+The core rendering engine uses a simplified formula: $R = E + P + S$ where:
 
-\`\`\`javascript
-function fibonacci(n) {
-  if (n <= 1) return n;
-  return fibonacci(n - 1) + fibonacci(n - 2);
-}
+- $R$ is the rendered output
+- $E$ is the editor content
+- $P$ is the processing logic
+- $S$ is the style definitions
 
-console.log(fibonacci(10)); // 55
-\`\`\`
+### Performance Metrics
 
-## Lista de tareas
+| Metric       | Target  | Current |
+| :----------- | :-----: | ------: |
+| Load Time    | < 1s    | 0.8s    |
+| Render Speed | < 50ms  | 35ms    |
+| Memory Usage | < 100MB | 75MB    |
 
-- [x] Soporte para tablas GFM
-- [x] Soporte para c\u00f3digo con sintaxis
-- [x] Soporte para ~~texto tachado~~
-- [ ] M\u00e1s caracter\u00edsticas por venir
+## Next Steps
 
-> **Nota:** Este editor soporta Markdown completo con extensiones GFM y f\u00f3rmulas LaTeX.`
+1. Refine typography
+2. Implement dark/light mode toggle
+3. Add export options`
 
 const STORAGE_KEY = 'markdown-editor-content'
 
@@ -54,7 +49,6 @@ function App() {
     return localStorage.getItem(STORAGE_KEY) || defaultContent
   })
   const [pdfLoading, setPdfLoading] = useState(false)
-  const [previewExpanded, setPreviewExpanded] = useState(false)
 
   const previewRef = useRef(null)
   const fileInputRef = useRef(null)
@@ -75,7 +69,7 @@ function App() {
         html2canvas: {
           scale: 2,
           useCORS: true,
-          backgroundColor: '#ffffff',
+          backgroundColor: '#fdfdfd',
         },
         jsPDF: {
           unit: 'mm',
@@ -113,18 +107,30 @@ function App() {
   }
 
   const handleClear = () => {
-    if (window.confirm('\u00bfEst\u00e1s seguro de que quieres borrar todo el contenido?')) {
+    if (window.confirm('¿Estás seguro de que quieres borrar todo el contenido?')) {
       setMarkdown('')
     }
   }
 
   return (
-    <div className="app-root">
-      {/* Glassmorphism Header */}
-      <header className="app-header">
-        <h1 className="app-title">Markdown Editor</h1>
+    <div className="aurora-root">
+      {/* Left Panel — Markdown Editor */}
+      <section className="editor-section">
+        <div className="editor-content-wrapper">
+          <textarea
+            className="editor-textarea"
+            value={markdown}
+            onChange={(e) => setMarkdown(e.target.value)}
+            spellCheck={false}
+            placeholder="Escribe tu Markdown aquí..."
+          />
+        </div>
+      </section>
 
-        <div className="header-actions">
+      {/* Right Panel — Live Preview */}
+      <section className="preview-section">
+        {/* Floating Action Buttons */}
+        <div className="floating-actions">
           <input
             type="file"
             accept=".md,.markdown,.txt,.docx"
@@ -134,75 +140,46 @@ function App() {
           />
 
           <button
-            className="action-btn btn-upload"
+            className="fab fab-blue"
             onClick={() => fileInputRef.current?.click()}
+            aria-label="Subir archivo"
             title="Subir un archivo .md, .txt o .docx"
           >
-            <Upload size={15} />
-            <span>Subir archivo</span>
+            <Upload size={20} strokeWidth={2} />
           </button>
 
           <button
-            className="action-btn btn-clear"
+            className="fab fab-red"
             onClick={handleClear}
-            title="Borrar todo el contenido del editor"
+            aria-label="Borrar contenido"
+            title="Borrar todo el contenido"
           >
-            <Trash2 size={15} />
-            <span>Limpiar</span>
+            <Trash2 size={20} strokeWidth={2} />
           </button>
 
           <button
-            className="action-btn btn-download"
+            className="fab fab-green"
             onClick={handleDownloadPdf}
             disabled={pdfLoading}
-            title="Exportar la vista previa como PDF"
+            aria-label="Descargar PDF"
+            title="Exportar como PDF"
           >
-            <FileDown size={15} />
-            <span>{pdfLoading ? 'Generando...' : 'Descargar PDF'}</span>
+            <Download size={20} strokeWidth={2} />
           </button>
         </div>
-      </header>
 
-      {/* Main Editor Area */}
-      <main className="editor-area">
-        {/* Editor Panel */}
-        <div className={`editor-panel ${previewExpanded ? 'collapsed' : ''}`}>
-          <div className="pane-header editor-pane-header">
-            <span className="pane-label">Editor</span>
-          </div>
-          <textarea
-            className="editor-textarea"
-            value={markdown}
-            onChange={(e) => setMarkdown(e.target.value)}
-            spellCheck={false}
-            placeholder="Escribe tu Markdown aqu\u00ed..."
-          />
-        </div>
-
-        {/* Preview Panel */}
-        <div className={`preview-panel ${previewExpanded ? 'expanded' : ''}`}>
-          <div className="pane-header preview-pane-header">
-            <span className="pane-label">Vista Previa</span>
-            <button
-              className="fullscreen-toggle"
-              onClick={() => setPreviewExpanded(!previewExpanded)}
-              title={previewExpanded ? 'Salir de pantalla completa' : 'Ver en grande'}
+        {/* Preview Content */}
+        <div className="preview-scroll">
+          <div className="preview-body" ref={previewRef}>
+            <ReactMarkdown
+              remarkPlugins={[remarkMath, remarkGfm]}
+              rehypePlugins={[rehypeKatex]}
             >
-              {previewExpanded ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
-            </button>
-          </div>
-          <div className="preview-scroll">
-            <div className="markdown-body" ref={previewRef}>
-              <ReactMarkdown
-                remarkPlugins={[remarkMath, remarkGfm]}
-                rehypePlugins={[rehypeKatex]}
-              >
-                {markdown}
-              </ReactMarkdown>
-            </div>
+              {markdown}
+            </ReactMarkdown>
           </div>
         </div>
-      </main>
+      </section>
     </div>
   )
 }
