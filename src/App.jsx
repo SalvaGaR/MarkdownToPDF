@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
+import rehypeRaw from 'rehype-raw'
 import remarkGfm from 'remark-gfm'
 import { Upload, Trash2, Download, Maximize2, Minimize2, Plus, Minus } from 'lucide-react'
 import html2pdf from 'html2pdf.js'
@@ -136,7 +137,23 @@ const ZOOM_STEP = 10
 const ZOOM_DEFAULT = 100
 
 const remarkPlugins = [remarkMath, remarkGfm]
-const rehypePlugins = [rehypeKatex]
+const rehypePlugins = [rehypeRaw, rehypeKatex]
+
+const HIGHLIGHT_COLORS = [
+  { label: 'Amarillo', color: '#fef08a' },
+  { label: 'Verde', color: '#bbf7d0' },
+  { label: 'Rosa', color: '#fbcfe8' },
+  { label: 'Azul', color: '#bfdbfe' },
+  { label: 'Naranja', color: '#fed7aa' },
+]
+
+const TEXT_COLORS = [
+  { label: 'Rojo', color: '#dc2626' },
+  { label: 'Azul', color: '#2563eb' },
+  { label: 'Verde', color: '#16a34a' },
+  { label: 'Morado', color: '#9333ea' },
+  { label: 'Naranja', color: '#ea580c' },
+]
 
 function App() {
   const [markdown, setMarkdown] = useState(() => {
@@ -153,9 +170,12 @@ function App() {
     return saved ? Number(saved) : ZOOM_DEFAULT
   })
 
+  const [floatingMenu, setFloatingMenu] = useState({ visible: false, x: 0, y: 0, text: '' })
+
   const previewRef = useRef(null)
   const fullscreenPreviewRef = useRef(null)
   const fileInputRef = useRef(null)
+  const floatingMenuRef = useRef(null)
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, markdown)
@@ -187,6 +207,79 @@ function App() {
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [fullscreen])
+
+  const handleTextSelection = useCallback((e) => {
+    if (floatingMenuRef.current && floatingMenuRef.current.contains(e.target)) {
+      return
+    }
+
+    const selection = document.getSelection()
+    const selectedText = selection?.toString().trim()
+
+    if (!selectedText) {
+      setFloatingMenu((prev) => ({ ...prev, visible: false }))
+      return
+    }
+
+    const previewEl = previewRef.current
+    if (!previewEl || !previewEl.contains(selection.anchorNode)) {
+      setFloatingMenu((prev) => ({ ...prev, visible: false }))
+      return
+    }
+
+    const range = selection.getRangeAt(0)
+    const rect = range.getBoundingClientRect()
+
+    setFloatingMenu({
+      visible: true,
+      x: rect.left + rect.width / 2,
+      y: rect.top,
+      text: selectedText,
+    })
+  }, [])
+
+  useEffect(() => {
+    document.addEventListener('mouseup', handleTextSelection)
+    return () => document.removeEventListener('mouseup', handleTextSelection)
+  }, [handleTextSelection])
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!floatingMenu.visible) return
+      if (floatingMenuRef.current && floatingMenuRef.current.contains(e.target)) return
+
+      const selection = document.getSelection()
+      const selectedText = selection?.toString().trim()
+      if (!selectedText) {
+        setFloatingMenu((prev) => ({ ...prev, visible: false }))
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [floatingMenu.visible])
+
+  const applyStyle = useCallback((type, color) => {
+    const { text } = floatingMenu
+    if (!text || !markdown.includes(text)) {
+      setFloatingMenu((prev) => ({ ...prev, visible: false }))
+      return
+    }
+
+    let wrappedText
+    if (type === 'highlight') {
+      wrappedText = `<mark style="background-color: ${color}">${text}</mark>`
+    } else {
+      wrappedText = `<span style="color: ${color}">${text}</span>`
+    }
+
+    const idx = markdown.indexOf(text)
+    const newMarkdown = markdown.substring(0, idx) + wrappedText + markdown.substring(idx + text.length)
+    setMarkdown(newMarkdown)
+    setFloatingMenu({ visible: false, x: 0, y: 0, text: '' })
+
+    window.getSelection()?.removeAllRanges()
+  }, [floatingMenu, markdown])
 
   const handleDownloadPdf = useCallback(async () => {
     const element = fullscreen ? fullscreenPreviewRef.current : previewRef.current
@@ -405,6 +498,50 @@ function App() {
                   {markdownPreview}
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Text Styling Menu */}
+      {floatingMenu.visible && (
+        <div
+          ref={floatingMenuRef}
+          className="floating-style-menu"
+          style={{
+            left: floatingMenu.x,
+            top: floatingMenu.y,
+          }}
+          onMouseDown={(e) => e.preventDefault()}
+        >
+          <div className="floating-menu-arrow" />
+          <div className="floating-menu-section">
+            <span className="floating-menu-label">Resaltado</span>
+            <div className="floating-menu-colors">
+              {HIGHLIGHT_COLORS.map((c) => (
+                <button
+                  key={c.color}
+                  className="color-swatch highlight-swatch"
+                  style={{ backgroundColor: c.color }}
+                  title={c.label}
+                  onClick={() => applyStyle('highlight', c.color)}
+                />
+              ))}
+            </div>
+          </div>
+          <div className="floating-menu-divider" />
+          <div className="floating-menu-section">
+            <span className="floating-menu-label">Color de texto</span>
+            <div className="floating-menu-colors">
+              {TEXT_COLORS.map((c) => (
+                <button
+                  key={c.color}
+                  className="color-swatch text-swatch"
+                  style={{ backgroundColor: c.color }}
+                  title={c.label}
+                  onClick={() => applyStyle('text', c.color)}
+                />
+              ))}
             </div>
           </div>
         </div>
