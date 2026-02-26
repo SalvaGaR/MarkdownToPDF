@@ -5,9 +5,6 @@ import rehypeKatex from 'rehype-katex'
 import rehypeRaw from 'rehype-raw'
 import remarkGfm from 'remark-gfm'
 import { Upload, Trash2, Download, Maximize2, Minimize2, Plus, Minus } from 'lucide-react'
-import html2pdf from 'html2pdf.js'
-import mammoth from 'mammoth'
-import TurndownService from 'turndown'
 import 'katex/dist/katex.min.css'
 
 const DEFAULT_CONTENT = `# Markdown + LaTeX: Guía Experta
@@ -126,7 +123,7 @@ El estimador de máxima verosimilitud de $\\mu$ es simplemente $\\hat{\\mu} = \\
 
 ---
 
-*Edita este documento o importa tu propio archivo `.md` / `.docx` — y exporta a PDF con el botón de descarga.*`
+*Edita este documento o importa tu propio archivo \`.md\` / \`.docx\` — y exporta a PDF con el botón de descarga.*`
 
 const STORAGE_KEY = 'markdown-editor-content'
 const ZOOM_KEY = 'markdown-editor-zoom'
@@ -137,7 +134,7 @@ const ZOOM_STEP = 10
 const ZOOM_DEFAULT = 100
 
 const remarkPlugins = [remarkMath, remarkGfm]
-const rehypePlugins = [rehypeRaw, rehypeKatex]
+const rehypePlugins = [rehypeKatex, rehypeRaw]
 
 const HIGHLIGHT_COLORS = [
   { label: 'Amarillo', color: '#fef08a' },
@@ -157,17 +154,31 @@ const TEXT_COLORS = [
 
 function App() {
   const [markdown, setMarkdown] = useState(() => {
-    return localStorage.getItem(STORAGE_KEY) || DEFAULT_CONTENT
+    try {
+      return localStorage.getItem(STORAGE_KEY) || DEFAULT_CONTENT
+    } catch {
+      return DEFAULT_CONTENT
+    }
   })
   const [pdfLoading, setPdfLoading] = useState(false)
   const [fullscreen, setFullscreen] = useState(false)
   const [zoom, setZoom] = useState(() => {
-    const saved = localStorage.getItem(ZOOM_KEY)
-    return saved ? Number(saved) : ZOOM_DEFAULT
+    try {
+      const saved = localStorage.getItem(ZOOM_KEY)
+      const val = saved ? Number(saved) : ZOOM_DEFAULT
+      return Number.isFinite(val) ? val : ZOOM_DEFAULT
+    } catch {
+      return ZOOM_DEFAULT
+    }
   })
   const [editorZoom, setEditorZoom] = useState(() => {
-    const saved = localStorage.getItem(EDITOR_ZOOM_KEY)
-    return saved ? Number(saved) : ZOOM_DEFAULT
+    try {
+      const saved = localStorage.getItem(EDITOR_ZOOM_KEY)
+      const val = saved ? Number(saved) : ZOOM_DEFAULT
+      return Number.isFinite(val) ? val : ZOOM_DEFAULT
+    } catch {
+      return ZOOM_DEFAULT
+    }
   })
 
   const [floatingMenu, setFloatingMenu] = useState({ visible: false, x: 0, y: 0, text: '' })
@@ -178,15 +189,15 @@ function App() {
   const floatingMenuRef = useRef(null)
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, markdown)
+    try { localStorage.setItem(STORAGE_KEY, markdown) } catch { /* ignore */ }
   }, [markdown])
 
   useEffect(() => {
-    localStorage.setItem(ZOOM_KEY, String(zoom))
+    try { localStorage.setItem(ZOOM_KEY, String(zoom)) } catch { /* ignore */ }
   }, [zoom])
 
   useEffect(() => {
-    localStorage.setItem(EDITOR_ZOOM_KEY, String(editorZoom))
+    try { localStorage.setItem(EDITOR_ZOOM_KEY, String(editorZoom)) } catch { /* ignore */ }
   }, [editorZoom])
 
   useEffect(() => {
@@ -286,6 +297,7 @@ function App() {
     if (!element) return
     setPdfLoading(true)
     try {
+      const { default: html2pdf } = await import('html2pdf.js')
       const opt = {
         margin: [10, 10, 10, 10],
         filename: 'documento.pdf',
@@ -308,6 +320,10 @@ function App() {
 
     try {
       if (file.name.endsWith('.docx')) {
+        const [{ default: mammoth }, { default: TurndownService }] = await Promise.all([
+          import('mammoth'),
+          import('turndown'),
+        ])
         const arrayBuffer = await file.arrayBuffer()
         const result = await mammoth.convertToHtml({ arrayBuffer })
         const turndown = new TurndownService({ headingStyle: 'atx', bulletListMarker: '-' })
