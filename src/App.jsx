@@ -3,7 +3,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
 import remarkGfm from 'remark-gfm'
-import { Upload, Trash2, FileDown } from 'lucide-react'
+import { Upload, Trash2, FileDown, Maximize2, Minimize2 } from 'lucide-react'
 import html2pdf from 'html2pdf.js'
 import mammoth from 'mammoth'
 import TurndownService from 'turndown'
@@ -54,6 +54,7 @@ function App() {
     return localStorage.getItem(STORAGE_KEY) || defaultContent
   })
   const [pdfLoading, setPdfLoading] = useState(false)
+  const [previewExpanded, setPreviewExpanded] = useState(false)
 
   const previewRef = useRef(null)
   const fileInputRef = useRef(null)
@@ -118,63 +119,59 @@ function App() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-100 overflow-hidden">
+    <div className="app-root">
+      {/* Glassmorphism Header */}
+      <header className="app-header">
+        <h1 className="app-title">Markdown Editor</h1>
 
-      {/* Sticky Toolbar */}
-      <header className="flex items-center gap-3 px-6 py-3 bg-slate-900 shadow-lg shrink-0">
-        <h1 className="text-white font-bold text-base mr-auto tracking-tight select-none">
-          Markdown Editor
-        </h1>
+        <div className="header-actions">
+          <input
+            type="file"
+            accept=".md,.markdown,.txt,.docx"
+            ref={fileInputRef}
+            onChange={handleUpload}
+            className="hidden"
+          />
 
-        <input
-          type="file"
-          accept=".md,.markdown,.txt,.docx"
-          ref={fileInputRef}
-          onChange={handleUpload}
-          className="hidden"
-        />
+          <button
+            className="action-btn btn-upload"
+            onClick={() => fileInputRef.current?.click()}
+            title="Subir un archivo .md, .txt o .docx"
+          >
+            <Upload size={15} />
+            <span>Subir archivo</span>
+          </button>
 
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white rounded-md text-sm font-medium transition-colors shadow-sm"
-          title="Subir un archivo .md, .txt o .docx desde tu ordenador"
-        >
-          <Upload size={15} />
-          Subir archivo
-        </button>
+          <button
+            className="action-btn btn-clear"
+            onClick={handleClear}
+            title="Borrar todo el contenido del editor"
+          >
+            <Trash2 size={15} />
+            <span>Limpiar</span>
+          </button>
 
-        <button
-          onClick={handleClear}
-          className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-500 active:bg-red-700 text-white rounded-md text-sm font-medium transition-colors shadow-sm"
-          title="Borrar todo el contenido del editor"
-        >
-          <Trash2 size={15} />
-          Limpiar
-        </button>
-
-        <button
-          onClick={handleDownloadPdf}
-          disabled={pdfLoading}
-          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-md text-sm font-medium transition-colors shadow-sm"
-          title="Exportar la vista previa como PDF"
-        >
-          <FileDown size={15} />
-          {pdfLoading ? 'Generando...' : 'Descargar PDF'}
-        </button>
+          <button
+            className="action-btn btn-download"
+            onClick={handleDownloadPdf}
+            disabled={pdfLoading}
+            title="Exportar la vista previa como PDF"
+          >
+            <FileDown size={15} />
+            <span>{pdfLoading ? 'Generando...' : 'Descargar PDF'}</span>
+          </button>
+        </div>
       </header>
 
-      {/* Two-column layout */}
-      <div className="flex flex-1 min-h-0">
-
-        {/* Editor column */}
-        <div className="flex flex-col w-1/2 border-r border-gray-300">
-          <div className="px-5 py-2 bg-gray-200 border-b border-gray-300 shrink-0">
-            <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">
-              Editor
-            </span>
+      {/* Main Editor Area */}
+      <main className="editor-area">
+        {/* Editor Panel */}
+        <div className={`editor-panel ${previewExpanded ? 'collapsed' : ''}`}>
+          <div className="pane-header editor-pane-header">
+            <span className="pane-label">Editor</span>
           </div>
           <textarea
-            className="flex-1 p-5 resize-none overflow-y-auto bg-gray-950 text-gray-100 font-mono text-sm focus:outline-none leading-relaxed caret-blue-400 placeholder-gray-600"
+            className="editor-textarea"
             value={markdown}
             onChange={(e) => setMarkdown(e.target.value)}
             spellCheck={false}
@@ -182,18 +179,20 @@ function App() {
           />
         </div>
 
-        {/* Preview column */}
-        <div className="flex flex-col w-1/2">
-          <div className="px-5 py-2 bg-gray-200 border-b border-gray-300 shrink-0">
-            <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">
-              Vista Previa
-            </span>
-          </div>
-          <div className="flex-1 overflow-y-auto bg-white">
-            <div
-              className="markdown-body p-8"
-              ref={previewRef}
+        {/* Preview Panel */}
+        <div className={`preview-panel ${previewExpanded ? 'expanded' : ''}`}>
+          <div className="pane-header preview-pane-header">
+            <span className="pane-label">Vista Previa</span>
+            <button
+              className="fullscreen-toggle"
+              onClick={() => setPreviewExpanded(!previewExpanded)}
+              title={previewExpanded ? 'Salir de pantalla completa' : 'Ver en grande'}
             >
+              {previewExpanded ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+            </button>
+          </div>
+          <div className="preview-scroll">
+            <div className="markdown-body" ref={previewRef}>
               <ReactMarkdown
                 remarkPlugins={[remarkMath, remarkGfm]}
                 rehypePlugins={[rehypeKatex]}
@@ -203,8 +202,7 @@ function App() {
             </div>
           </div>
         </div>
-
-      </div>
+      </main>
     </div>
   )
 }
