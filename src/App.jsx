@@ -44,6 +44,7 @@ The core rendering engine uses a simplified formula: $R = E + P + S$ where:
 
 const STORAGE_KEY = 'markdown-editor-content'
 const ZOOM_KEY = 'markdown-editor-zoom'
+const EDITOR_ZOOM_KEY = 'markdown-editor-editor-zoom'
 const ZOOM_MIN = 60
 const ZOOM_MAX = 160
 const ZOOM_STEP = 10
@@ -62,6 +63,10 @@ function App() {
     const saved = localStorage.getItem(ZOOM_KEY)
     return saved ? Number(saved) : ZOOM_DEFAULT
   })
+  const [editorZoom, setEditorZoom] = useState(() => {
+    const saved = localStorage.getItem(EDITOR_ZOOM_KEY)
+    return saved ? Number(saved) : ZOOM_DEFAULT
+  })
 
   const previewRef = useRef(null)
   const fullscreenPreviewRef = useRef(null)
@@ -74,6 +79,10 @@ function App() {
   useEffect(() => {
     localStorage.setItem(ZOOM_KEY, String(zoom))
   }, [zoom])
+
+  useEffect(() => {
+    localStorage.setItem(EDITOR_ZOOM_KEY, String(editorZoom))
+  }, [editorZoom])
 
   useEffect(() => {
     if (fullscreen) {
@@ -146,7 +155,16 @@ function App() {
     setZoom((prev) => Math.max(prev - ZOOM_STEP, ZOOM_MIN))
   }, [])
 
+  const handleEditorZoomIn = useCallback(() => {
+    setEditorZoom((prev) => Math.min(prev + ZOOM_STEP, ZOOM_MAX))
+  }, [])
+
+  const handleEditorZoomOut = useCallback(() => {
+    setEditorZoom((prev) => Math.max(prev - ZOOM_STEP, ZOOM_MIN))
+  }, [])
+
   const zoomStyle = { fontSize: `${zoom}%` }
+  const editorZoomStyle = { fontSize: `${editorZoom}%` }
 
   const markdownPreview = (
     <ReactMarkdown remarkPlugins={remarkPlugins} rehypePlugins={rehypePlugins}>
@@ -158,6 +176,27 @@ function App() {
     <div className="aurora-root">
       {/* Editor Panel */}
       <section className="editor-section">
+        <div className="editor-toolbar">
+          <button
+            className="tool-btn"
+            onClick={handleEditorZoomOut}
+            disabled={editorZoom <= ZOOM_MIN}
+            aria-label="Reducir zoom editor"
+            title="Reducir texto"
+          >
+            <Minus size={16} strokeWidth={1.5} />
+          </button>
+          <span className="zoom-label">{editorZoom}%</span>
+          <button
+            className="tool-btn"
+            onClick={handleEditorZoomIn}
+            disabled={editorZoom >= ZOOM_MAX}
+            aria-label="Aumentar zoom editor"
+            title="Aumentar texto"
+          >
+            <Plus size={16} strokeWidth={1.5} />
+          </button>
+        </div>
         <div className="editor-content-wrapper">
           <textarea
             className="editor-textarea"
@@ -165,7 +204,7 @@ function App() {
             onChange={(e) => setMarkdown(e.target.value)}
             spellCheck={false}
             placeholder="Escribe tu Markdown aquí..."
-            style={zoomStyle}
+            style={editorZoomStyle}
           />
         </div>
       </section>

@@ -83,6 +83,32 @@ html, body, #root {
   flex-direction: column;
 }
 
+.editor-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 10px;
+  background: rgba(0, 0, 0, 0.25);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.editor-toolbar .tool-btn {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.editor-toolbar .tool-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.editor-toolbar .tool-btn:active {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.editor-toolbar .zoom-label {
+  color: rgba(255, 255, 255, 0.45);
+}
+
 .editor-content-wrapper {
   flex: 1;
   display: flex;
