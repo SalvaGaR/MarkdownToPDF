@@ -237,7 +237,7 @@ html, body, #root {
 }
 
 .preview-body h1 {
-  font-size: 2.5rem;
+  font-size: 2.5em;
   font-weight: 700;
   color: #111;
   margin: 0 0 1.5rem;
@@ -246,7 +246,7 @@ html, body, #root {
 }
 
 .preview-body h2 {
-  font-size: 1.5rem;
+  font-size: 1.5em;
   font-weight: 700;
   color: #111;
   margin: 2rem 0 1rem;
@@ -254,7 +254,7 @@ html, body, #root {
 }
 
 .preview-body h3 {
-  font-size: 1.25rem;
+  font-size: 1.25em;
   font-weight: 700;
   color: #111;
   margin: 1.5rem 0 1rem;
@@ -272,7 +272,7 @@ html, body, #root {
 .preview-body p {
   margin: 0 0 1rem;
   color: #444;
-  font-size: 1.125rem;
+  font-size: 1.125em;
   line-height: 1.7;
 }
 
@@ -331,7 +331,7 @@ html, body, #root {
 .preview-body pre code {
   background-color: transparent;
   padding: 0;
-  font-size: 0.875rem;
+  font-size: 0.875em;
   border: none;
   border-radius: 0;
 }
@@ -348,14 +348,14 @@ html, body, #root {
   color: #111;
   border-bottom: 2px solid #e5e7eb;
   text-align: left;
-  font-size: 0.875rem;
+  font-size: 0.875em;
 }
 
 .preview-body table td {
   padding: 0.6rem 1rem;
   color: #444;
   border-bottom: 1px solid #f0f0f2;
-  font-size: 0.875rem;
+  font-size: 0.875em;
 }
 
 .preview-body blockquote {
