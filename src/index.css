@@ -1,2 +1,16 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
+
+/* ── Print styles: only the preview prose is printed ── */
+@media print {
+  body {
+    background: white;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* KaTeX formulas render correctly in print */
+  .katex {
+    font-size: 1em;
+  }
+}
