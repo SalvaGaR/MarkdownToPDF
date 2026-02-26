@@ -49,6 +49,7 @@ function App() {
       const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
+        allowTaint: true,
         logging: false,
         backgroundColor: '#ffffff',
       })
@@ -74,7 +75,18 @@ function App() {
         heightLeft -= pdfHeight
       }
 
-      pdf.save('documento.pdf')
+      const blob = pdf.output('blob')
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = 'documento.pdf'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      console.error('Error al generar PDF:', err)
+      alert('Error al generar el PDF: ' + err.message)
     } finally {
       setPdfLoading(false)
     }
