@@ -1,7 +1,57 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
-/* ── Print styles: only the preview prose is printed ── */
+/* Ensure html and body take full height */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+/* github-markdown-css overrides for preview panel */
+.markdown-body {
+  font-size: 16px;
+  line-height: 1.6;
+  box-sizing: border-box;
+}
+
+.markdown-body table {
+  display: table;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.markdown-body table th,
+.markdown-body table td {
+  padding: 8px 16px;
+  border: 1px solid #d0d7de;
+}
+
+.markdown-body table tr:nth-child(2n) {
+  background-color: #f6f8fa;
+}
+
+.markdown-body pre {
+  background-color: #f6f8fa;
+  border-radius: 6px;
+  padding: 16px;
+  overflow-x: auto;
+}
+
+.markdown-body code {
+  background-color: rgba(175, 184, 193, 0.2);
+  border-radius: 6px;
+  padding: 0.2em 0.4em;
+  font-size: 85%;
+}
+
+.markdown-body pre code {
+  background-color: transparent;
+  padding: 0;
+  font-size: 100%;
+}
+
+/* Print styles */
 @media print {
   body {
     background: white;
@@ -9,7 +59,6 @@
     print-color-adjust: exact;
   }
 
-  /* KaTeX formulas render correctly in print */
   .katex {
     font-size: 1em;
   }
