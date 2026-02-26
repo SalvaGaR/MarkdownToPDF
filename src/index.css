@@ -1,18 +1,491 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
-/* Ensure html and body take full height */
+/* ============================================
+   Apple-Polished Markdown Editor — 2026 Design
+   ============================================ */
+
+/* === Design Tokens === */
+:root {
+  --bg-root: #0c0c10;
+  --bg-header: rgba(18, 18, 24, 0.72);
+  --bg-editor: #14141c;
+  --bg-preview: #ffffff;
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-editor: rgba(255, 255, 255, 0.08);
+  --border-preview: rgba(0, 0, 0, 0.06);
+  --text-primary: #f5f5f7;
+  --text-muted: rgba(245, 245, 247, 0.35);
+  --accent-blue: #0a84ff;
+  --accent-red: #ff453a;
+  --accent-green: #30d158;
+  --panel-radius: 14px;
+  --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* === Base Reset === */
 html, body, #root {
   height: 100%;
   margin: 0;
   overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* github-markdown-css overrides for preview panel */
+.hidden { display: none; }
+
+/* ======================
+   Entrance Animations
+   ====================== */
+
+@keyframes headerSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes panelSlideLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-24px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes panelSlideRight {
+  from {
+    opacity: 0;
+    transform: translateX(24px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes btnFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ======================
+   Root Container
+   ====================== */
+
+.app-root {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--bg-root);
+  overflow: hidden;
+}
+
+/* ======================
+   Glassmorphism Header
+   ====================== */
+
+.app-header {
+  display: flex;
+  align-items: center;
+  padding: 0 1.25rem;
+  height: 52px;
+  flex-shrink: 0;
+  background: var(--bg-header);
+  backdrop-filter: blur(48px) saturate(200%);
+  -webkit-backdrop-filter: blur(48px) saturate(200%);
+  border-bottom: 1px solid var(--border-subtle);
+  z-index: 10;
+  animation: headerSlideIn 0.7s var(--ease-spring) both;
+}
+
+.app-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  margin-right: auto;
+  user-select: none;
+}
+
+/* ======================
+   Action Buttons
+   ====================== */
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4375rem 0.875rem;
+  border-radius: 980px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  color: white;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform 0.4s var(--ease-spring),
+    box-shadow 0.4s var(--ease-spring),
+    filter 0.4s var(--ease-spring);
+  animation: btnFadeUp 0.55s var(--ease-bounce) both;
+}
+
+.action-btn:nth-child(2) { animation-delay: 0.06s; }
+.action-btn:nth-child(3) { animation-delay: 0.12s; }
+.action-btn:nth-child(4) { animation-delay: 0.18s; }
+
+/* Shine layer */
+.action-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.18) 0%,
+    rgba(255, 255, 255, 0) 50%
+  );
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+}
+
+.action-btn:hover {
+  transform: translateY(-1px) scale(1.04);
+}
+
+.action-btn:hover::after {
+  opacity: 1;
+}
+
+.action-btn:active {
+  transform: translateY(0.5px) scale(0.97);
+  transition-duration: 0.12s;
+}
+
+/* Button Variants */
+.btn-upload {
+  background: linear-gradient(135deg, #0a84ff 0%, #0070d6 100%);
+  box-shadow:
+    0 1px 3px rgba(10, 132, 255, 0.3),
+    0 4px 12px rgba(10, 132, 255, 0.15);
+}
+.btn-upload:hover {
+  box-shadow:
+    0 2px 8px rgba(10, 132, 255, 0.4),
+    0 8px 24px rgba(10, 132, 255, 0.2);
+}
+
+.btn-clear {
+  background: linear-gradient(135deg, #ff453a 0%, #d63a31 100%);
+  box-shadow:
+    0 1px 3px rgba(255, 69, 58, 0.3),
+    0 4px 12px rgba(255, 69, 58, 0.15);
+}
+.btn-clear:hover {
+  box-shadow:
+    0 2px 8px rgba(255, 69, 58, 0.4),
+    0 8px 24px rgba(255, 69, 58, 0.2);
+}
+
+.btn-download {
+  background: linear-gradient(135deg, #30d158 0%, #28a745 100%);
+  box-shadow:
+    0 1px 3px rgba(48, 209, 88, 0.3),
+    0 4px 12px rgba(48, 209, 88, 0.15);
+}
+.btn-download:hover {
+  box-shadow:
+    0 2px 8px rgba(48, 209, 88, 0.4),
+    0 8px 24px rgba(48, 209, 88, 0.2);
+}
+
+.btn-download:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: saturate(0.6);
+}
+.btn-download:disabled:hover {
+  transform: none;
+  box-shadow:
+    0 1px 3px rgba(48, 209, 88, 0.3),
+    0 4px 12px rgba(48, 209, 88, 0.15);
+}
+.btn-download:disabled::after {
+  display: none;
+}
+
+/* ======================
+   Editor Area (Split Pane)
+   ====================== */
+
+.editor-area {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  padding: 0.75rem;
+  gap: 0.75rem;
+}
+
+/* ======================
+   Editor Panel
+   ====================== */
+
+.editor-panel {
+  display: flex;
+  flex-direction: column;
+  width: 50%;
+  min-width: 0;
+  border-radius: var(--panel-radius);
+  background: var(--bg-editor);
+  border: 1px solid var(--border-editor);
+  overflow: hidden;
+  transition:
+    width 0.65s var(--ease-out),
+    min-width 0.65s var(--ease-out),
+    opacity 0.5s var(--ease-out),
+    padding 0.65s var(--ease-out),
+    margin 0.65s var(--ease-out),
+    border-width 0.3s ease,
+    flex 0.65s var(--ease-out);
+  animation: panelSlideLeft 0.7s var(--ease-spring) 0.1s both;
+}
+
+.editor-panel.collapsed {
+  width: 0;
+  min-width: 0;
+  opacity: 0;
+  padding: 0;
+  border-width: 0;
+  margin-right: -0.75rem;
+  flex: 0 0 0%;
+  overflow: hidden;
+}
+
+/* ======================
+   Preview Panel
+   ====================== */
+
+.preview-panel {
+  display: flex;
+  flex-direction: column;
+  width: 50%;
+  min-width: 0;
+  border-radius: var(--panel-radius);
+  background: var(--bg-preview);
+  border: 1px solid var(--border-preview);
+  overflow: hidden;
+  transition:
+    width 0.65s var(--ease-out),
+    flex 0.65s var(--ease-out),
+    border-radius 0.65s var(--ease-out);
+  animation: panelSlideRight 0.7s var(--ease-spring) 0.15s both;
+}
+
+.preview-panel.expanded {
+  width: 100%;
+  flex: 1 1 100%;
+}
+
+/* ======================
+   Pane Headers
+   ====================== */
+
+.pane-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.25rem;
+  height: 36px;
+  flex-shrink: 0;
+}
+
+.editor-pane-header {
+  background: rgba(255, 255, 255, 0.025);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.preview-pane-header {
+  background: #fafafa;
+  border-bottom: 1px solid #ebebeb;
+}
+
+.pane-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.editor-pane-header .pane-label {
+  color: var(--text-muted);
+}
+
+.preview-pane-header .pane-label {
+  color: #aaa;
+}
+
+/* ======================
+   Fullscreen Toggle
+   ====================== */
+
+.fullscreen-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: #bbb;
+  cursor: pointer;
+  transition:
+    background 0.25s ease,
+    color 0.25s ease,
+    transform 0.35s var(--ease-bounce);
+}
+
+.fullscreen-toggle:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #555;
+  transform: scale(1.12);
+}
+
+.fullscreen-toggle:active {
+  transform: scale(0.92);
+  transition-duration: 0.1s;
+}
+
+/* ======================
+   Editor Textarea
+   ====================== */
+
+.editor-textarea {
+  flex: 1;
+  width: 100%;
+  padding: 1.25rem;
+  resize: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', 'Cascadia Code', 'Menlo', monospace;
+  font-size: 0.875rem;
+  line-height: 1.75;
+  border: none;
+  outline: none;
+  caret-color: var(--accent-blue);
+  tab-size: 2;
+}
+
+.editor-textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.editor-textarea::selection {
+  background: rgba(10, 132, 255, 0.35);
+}
+
+/* ======================
+   Preview Content
+   ====================== */
+
+.preview-scroll {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* ======================
+   Custom Scrollbars
+   ====================== */
+
+.editor-textarea,
+.preview-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.editor-textarea:hover,
+.preview-scroll:hover {
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+}
+
+.preview-scroll:hover {
+  scrollbar-color: rgba(0, 0, 0, 0.12) transparent;
+}
+
+/* Webkit Scrollbar */
+.editor-textarea::-webkit-scrollbar,
+.preview-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.editor-textarea::-webkit-scrollbar-track,
+.preview-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.editor-textarea::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0);
+  border-radius: 3px;
+  transition: background 0.3s ease;
+}
+
+.editor-textarea:hover::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.editor-textarea::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.preview-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0);
+  border-radius: 3px;
+}
+
+.preview-scroll:hover::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.preview-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* ======================
+   Markdown Body Overrides
+   ====================== */
+
 .markdown-body {
+  padding: 2rem;
   font-size: 16px;
-  line-height: 1.6;
+  line-height: 1.7;
   box-sizing: border-box;
+  color: #1d1d1f;
+  min-height: 100%;
 }
 
 .markdown-body table {
@@ -24,41 +497,81 @@ html, body, #root {
 .markdown-body table th,
 .markdown-body table td {
   padding: 8px 16px;
-  border: 1px solid #d0d7de;
+  border: 1px solid #e1e4e8;
+}
+
+.markdown-body table th {
+  background-color: #f6f8fa;
+  font-weight: 600;
 }
 
 .markdown-body table tr:nth-child(2n) {
-  background-color: #f6f8fa;
+  background-color: #f9fafb;
 }
 
 .markdown-body pre {
-  background-color: #f6f8fa;
-  border-radius: 6px;
+  background-color: #f5f5f7;
+  border-radius: 10px;
   padding: 16px;
   overflow-x: auto;
+  border: 1px solid #e5e5e7;
 }
 
 .markdown-body code {
-  background-color: rgba(175, 184, 193, 0.2);
-  border-radius: 6px;
+  background-color: rgba(175, 184, 193, 0.15);
+  border-radius: 5px;
   padding: 0.2em 0.4em;
   font-size: 85%;
+  font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
 }
 
 .markdown-body pre code {
   background-color: transparent;
   padding: 0;
   font-size: 100%;
+  border: none;
 }
 
-/* Print styles */
+.markdown-body blockquote {
+  border-left: 3px solid var(--accent-blue);
+  padding-left: 1em;
+  color: #555;
+  background: rgba(10, 132, 255, 0.03);
+  border-radius: 0 8px 8px 0;
+  padding: 0.75em 1em;
+  margin: 1em 0;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3 {
+  letter-spacing: -0.02em;
+  color: #1d1d1f;
+}
+
+.markdown-body hr {
+  border: none;
+  height: 1px;
+  background: #e5e5e7;
+  margin: 2em 0;
+}
+
+.markdown-body input[type="checkbox"] {
+  accent-color: var(--accent-blue);
+  margin-right: 0.5em;
+  transform: scale(1.1);
+}
+
+/* ======================
+   Print Styles
+   ====================== */
+
 @media print {
   body {
     background: white;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
-
   .katex {
     font-size: 1em;
   }
