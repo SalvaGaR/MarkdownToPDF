@@ -5,9 +5,6 @@ import rehypeKatex from 'rehype-katex'
 import rehypeRaw from 'rehype-raw'
 import remarkGfm from 'remark-gfm'
 import { Upload, Trash2, Download, Maximize2, Minimize2, Plus, Minus } from 'lucide-react'
-import html2pdf from 'html2pdf.js'
-import mammoth from 'mammoth'
-import TurndownService from 'turndown'
 import 'katex/dist/katex.min.css'
 
 const DEFAULT_CONTENT = `# Markdown + LaTeX: Guía Experta
@@ -286,6 +283,7 @@ function App() {
     if (!element) return
     setPdfLoading(true)
     try {
+      const { default: html2pdf } = await import('html2pdf.js')
       const opt = {
         margin: [10, 10, 10, 10],
         filename: 'documento.pdf',
@@ -308,6 +306,10 @@ function App() {
 
     try {
       if (file.name.endsWith('.docx')) {
+        const [{ default: mammoth }, { default: TurndownService }] = await Promise.all([
+          import('mammoth'),
+          import('turndown'),
+        ])
         const arrayBuffer = await file.arrayBuffer()
         const result = await mammoth.convertToHtml({ arrayBuffer })
         const turndown = new TurndownService({ headingStyle: 'atx', bulletListMarker: '-' })

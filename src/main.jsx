@@ -1,7 +1,8 @@
-import { StrictMode, Component } from 'react'
+import { StrictMode, Component, Suspense, lazy } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
-import App from './App.jsx'
+
+const App = lazy(() => import('./App.jsx'))
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -41,7 +42,13 @@ class ErrorBoundary extends Component {
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <ErrorBoundary>
-      <App />
+      <Suspense fallback={
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', fontFamily: 'system-ui, sans-serif', color: '#666' }}>
+          Cargando editor...
+        </div>
+      }>
+        <App />
+      </Suspense>
     </ErrorBoundary>
   </StrictMode>,
 )
