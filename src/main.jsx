@@ -2,7 +2,21 @@ import { StrictMode, Component, Suspense, lazy } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 
-const App = lazy(() => import('./App.jsx'))
+// Handle Vite chunk loading errors (e.g., after deployment with new hashes)
+// https://vite.dev/guide/build.html#load-error-handling
+window.addEventListener('vite:preloadError', (e) => {
+  e.preventDefault()
+  window.location.reload()
+})
+
+// Lazy load App with retry logic for chunk loading failures
+const App = lazy(() =>
+  import('./App.jsx').catch(() => {
+    window.location.reload()
+    // Return a never-resolving promise to prevent rendering while reloading
+    return new Promise(() => {})
+  })
+)
 
 class ErrorBoundary extends Component {
   constructor(props) {

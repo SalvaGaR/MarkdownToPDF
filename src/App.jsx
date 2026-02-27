@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
@@ -123,7 +123,7 @@ El estimador de máxima verosimilitud de $\\mu$ es simplemente $\\hat{\\mu} = \\
 
 ---
 
-*Edita este documento o importa tu propio archivo `.md` / `.docx` — y exporta a PDF con el botón de descarga.*`
+*Edita este documento o importa tu propio archivo \`.md\` / \`.docx\` — y exporta a PDF con el botón de descarga.*`
 
 const STORAGE_KEY = 'markdown-editor-content'
 const ZOOM_KEY = 'markdown-editor-zoom'
@@ -152,21 +152,32 @@ const TEXT_COLORS = [
   { label: 'Naranja', color: '#ea580c' },
 ]
 
+function loadFromStorage(key, fallback) {
+  try {
+    const saved = localStorage.getItem(key)
+    return saved !== null ? saved : fallback
+  } catch {
+    return fallback
+  }
+}
+
+function loadNumberFromStorage(key, fallback) {
+  try {
+    const saved = localStorage.getItem(key)
+    if (saved === null) return fallback
+    const num = Number(saved)
+    return Number.isFinite(num) ? num : fallback
+  } catch {
+    return fallback
+  }
+}
+
 function App() {
-  const [markdown, setMarkdown] = useState(() => {
-    return localStorage.getItem(STORAGE_KEY) || DEFAULT_CONTENT
-  })
+  const [markdown, setMarkdown] = useState(() => loadFromStorage(STORAGE_KEY, DEFAULT_CONTENT))
   const [pdfLoading, setPdfLoading] = useState(false)
   const [fullscreen, setFullscreen] = useState(false)
-  const [zoom, setZoom] = useState(() => {
-    const saved = localStorage.getItem(ZOOM_KEY)
-    return saved ? Number(saved) : ZOOM_DEFAULT
-  })
-  const [editorZoom, setEditorZoom] = useState(() => {
-    const saved = localStorage.getItem(EDITOR_ZOOM_KEY)
-    return saved ? Number(saved) : ZOOM_DEFAULT
-  })
-
+  const [zoom, setZoom] = useState(() => loadNumberFromStorage(ZOOM_KEY, ZOOM_DEFAULT))
+  const [editorZoom, setEditorZoom] = useState(() => loadNumberFromStorage(EDITOR_ZOOM_KEY, ZOOM_DEFAULT))
   const [floatingMenu, setFloatingMenu] = useState({ visible: false, x: 0, y: 0, text: '' })
 
   const previewRef = useRef(null)
@@ -175,15 +186,15 @@ function App() {
   const floatingMenuRef = useRef(null)
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, markdown)
+    try { localStorage.setItem(STORAGE_KEY, markdown) } catch { /* storage full */ }
   }, [markdown])
 
   useEffect(() => {
-    localStorage.setItem(ZOOM_KEY, String(zoom))
+    try { localStorage.setItem(ZOOM_KEY, String(zoom)) } catch { /* ignore */ }
   }, [zoom])
 
   useEffect(() => {
-    localStorage.setItem(EDITOR_ZOOM_KEY, String(editorZoom))
+    try { localStorage.setItem(EDITOR_ZOOM_KEY, String(editorZoom)) } catch { /* ignore */ }
   }, [editorZoom])
 
   useEffect(() => {
@@ -263,18 +274,14 @@ function App() {
       return
     }
 
-    let wrappedText
-    if (type === 'highlight') {
-      wrappedText = `<mark style="background-color: ${color}">${text}</mark>`
-    } else {
-      wrappedText = `<span style="color: ${color}">${text}</span>`
-    }
+    const wrappedText = type === 'highlight'
+      ? `<mark style="background-color: ${color}">${text}</mark>`
+      : `<span style="color: ${color}">${text}</span>`
 
     const idx = markdown.indexOf(text)
     const newMarkdown = markdown.substring(0, idx) + wrappedText + markdown.substring(idx + text.length)
     setMarkdown(newMarkdown)
     setFloatingMenu({ visible: false, x: 0, y: 0, text: '' })
-
     window.getSelection()?.removeAllRanges()
   }, [floatingMenu, markdown])
 
@@ -347,14 +354,14 @@ function App() {
     setEditorZoom((prev) => Math.max(prev - ZOOM_STEP, ZOOM_MIN))
   }, [])
 
-  const zoomStyle = { fontSize: `${zoom}%` }
-  const editorZoomStyle = { fontSize: `${editorZoom}%` }
+  const zoomStyle = useMemo(() => ({ fontSize: `${zoom}%` }), [zoom])
+  const editorZoomStyle = useMemo(() => ({ fontSize: `${editorZoom}%` }), [editorZoom])
 
-  const markdownPreview = (
+  const markdownPreview = useMemo(() => (
     <ReactMarkdown remarkPlugins={remarkPlugins} rehypePlugins={rehypePlugins}>
       {markdown}
     </ReactMarkdown>
-  )
+  ), [markdown])
 
   return (
     <div className="aurora-root">
