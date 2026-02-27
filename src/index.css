@@ -155,6 +155,7 @@ html, body, #root {
 .preview-scroll {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* ======================
@@ -233,6 +234,8 @@ html, body, #root {
   line-height: 1.7;
   min-height: 100%;
   box-sizing: border-box;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .preview-body h1 {
@@ -339,6 +342,8 @@ html, body, #root {
   width: 100%;
   border-collapse: collapse;
   margin: 0 0 1.5rem;
+  display: block;
+  overflow-x: auto;
 }
 
 .preview-body table th {
@@ -390,6 +395,11 @@ html, body, #root {
 }
 
 .preview-body .katex { font-size: 1em; }
+
+.preview-body .katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
 
 /* ======================
    Fullscreen A4 Preview
@@ -475,6 +485,7 @@ html, body, #root {
   box-shadow: 0 1px 20px rgba(0, 0, 0, 0.08);
   flex-shrink: 0;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 .a4-page .preview-body {
